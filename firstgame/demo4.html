@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="cn">
+
+<head>
+    <meta charset="utf-8">
+    <title>逆序击破</title>
+    <meta name="format-detection" content="telephone=no">
+    <style>
+    * {
+        padding: 0;
+        margin: 0
+    }
+    </style>
+</head>
+
+<body>
+    <script src="https://matchon.cn/libs/MoEventEmitter.js">
+    请打开浏览器的JavaScript功能
+    </script>
+    <script src="https://matchon.cn/libs/matchon-core.js"></script>
+    <script src="lib/Tween.min.js"></script>
+    <script src="lib/pixi.js"></script>
+    <script src="lib/uuid.js"></script>
+    <script >
+   /* 使用立即执行的匿名函数 */
+
+(function nixu() {
+
+    //使用PIXI提供的函数Container()创建一个舞台（即画布），接下来所有需要绘制的元素都将会添加到该舞台上
+    var stage = new PIXI.Container();
+
+    //PIXI.autoDetectRenderer()是PIXI提供的自动检测适合浏览器呈现画布的渲染器（绘制器）
+    var renderer = PIXI.autoDetectRenderer(256, 256, {
+            transparent: true,
+            antialias: true
+        });
+
+
+
+   //设置渲染器（Canvas）样式充满整个屏幕
+    renderer.view.style.position = "absolute ";
+    renderer.view.style.width = window.innerWidth + "px ";
+    renderer.view.style.height = window.innerHeight + "px ";
+    renderer.view.style.display = "block ";
+    renderer.resize(window.innerWidth, window.innerHeight);
+    //将该renderer.view渲染器添加到页面上
+    document.body.appendChild(renderer.view);
+  // 为了支持Retina设备高像素密度
+    var ratio = (window.devicePixelRatio || 1) > 1 ? 2 : 1;
+
+    //设置标题文字的样式，fontSize字体大小、fontWeight字体粗细、fill字体的颜色（十六进制）、align字体的对齐方式（cneter为文字居中）
+    var baseStyle = {
+        fontSize: 64 * ratio,
+        fontWeight: "bold ",
+        fill: '#8b1a1a',
+        align: 'center'
+    };
+
+    //使用PIXI的Text文字绘制接口，传入需要绘制的文字，与文字样式
+    var titleText = new PIXI.Text("逆 序 击 破 ", baseStyle);
+
+    //anchor.x/y 设置该元素的定位标准（即锚点），初始值是右上角即（0,0）坐标，我们更改为0.5,0.5 即定位标准变成以元素的中心为准
+    titleText.anchor.x = 0.5;
+    titleText.anchor.y = 0.5;
+
+    //设置该元素的xy轴位置
+    titleText.x = renderer.width / 2;
+    titleText.y = renderer.height * (1 - 0.618);
+
+    //将标题元素添加到舞台中
+    stage.addChild(titleText);
+
+    titleText.visible=false;
+
+    var buttonStyle = {
+
+        fontSize: 30 * ratio,
+        fontWeight: "bold ",
+        align: 'center'
+
+    };
+
+    //绘制 对战模式 按钮
+    var startMulti = new PIXI.Text("对战模式 ", buttonStyle);
+
+    //文字的定位，参数解释同上
+    startMulti.anchor.x = 0.5;
+    startMulti.anchor.y = 0.5;
+    startMulti.x = renderer.width / 2 - 100 * ratio;
+    startMulti.y = renderer.height * (1 - 0.618) + 150 * ratio;
+
+    //添加到舞台
+    stage.addChild(startMulti);
+
+    //绘制 单机模式 按钮
+    var startSingle = new PIXI.Text("单机模式 ", buttonStyle);
+
+    // 参数解释同上
+    startSingle.anchor.y = 0.5;
+    startSingle.x = renderer.width / 2 + 150 * ratio - startSingle.width;
+    startSingle.y = renderer.height * (1 - 0.618) + 150 * ratio;
+
+    //添加到舞台
+    stage.addChild(startSingle);
+
+    renderer.render(stage);
+    //执行循环执行函数
+    gameLoop();
+
+    //定义一个循环渲染函数，用来更新最新的元素信息
+    function gameLoop() {
+
+
+        window.requestAnimationFrame(gameLoop);
+
+
+        renderer.render(stage);
+
+
+    }
+
+}());
+    </script>
+</body>
+
+</html>

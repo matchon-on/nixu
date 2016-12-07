@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="cn">
+
+<head>
+    <meta charset="utf-8">
+    <title>逆序击破</title>
+    <meta name="format-detection" content="telephone=no">
+    <style>
+    * {
+        padding: 0;
+        margin: 0
+    }
+    </style>
+</head>
+
+<body>
+    <script src="https://matchon.cn/libs/MoEventEmitter.js">
+    请打开浏览器的JavaScript功能
+    </script>
+    <script src="https://matchon.cn/libs/matchon-core.js"></script>
+    <script src="lib/Tween.min.js"></script>
+    <script src="lib/pixi.js"></script>
+    <script src="lib/uuid.js"></script>
+    <script ">
+   /* 使用立即执行的匿名函数 */
+
+(function nixu() {
+
+    //使用PIXI提供的函数Container()创建一个舞台（即画布），接下来所有需要绘制的元素都将会添加到该舞台上
+    var stage = new PIXI.Container();
+
+    //PIXI.autoDetectRenderer()是PIXI提供的自动检测适合浏览器呈现画布的渲染器（绘制器）
+    var renderer = PIXI.autoDetectRenderer(256, 256, {
+            transparent: true,
+            antialias: true
+        });
+
+    //将该renderer.view渲染器添加到页面上      
+    document.body.appendChild(renderer.view);
+
+   //设置渲染器（Canvas）样式充满整个屏幕
+    renderer.view.style.position = "absolute ";
+    renderer.view.style.width = window.innerWidth + "px ";
+    renderer.view.style.height = window.innerHeight + "px ";
+    renderer.view.style.display = "block ";
+
+}());
+    </script>
+</body>
+
+</html>

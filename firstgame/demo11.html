@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="cn">
+
+<head>
+    <meta charset="utf-8">
+    <title>逆序击破</title>
+    <meta name="format-detection" content="telephone=no">
+    <style>
+    * {
+        padding: 0;
+        margin: 0
+    }
+    </style>
+</head>
+
+<body>
+    <script src="https://matchon.cn/libs/MoEventEmitter.js">
+    请打开浏览器的JavaScript功能
+    </script>
+    <script src="https://matchon.cn/libs/matchon-core.js"></script>
+    <script src="lib/Tween.min.js"></script>
+    <script src="lib/pixi.js"></script>
+    <script src="lib/uuid.js"></script>
+    <script>
+    /* 使用立即执行的匿名函数 */
+
+    (function nixu() {
+
+        //使用PIXI提供的函数Container()创建一个舞台（即画布），接下来所有需要绘制的元素都将会添加到该舞台上
+        var stage = new PIXI.Container();
+
+        //PIXI.autoDetectRenderer()是PIXI提供的自动检测适合浏览器呈现画布的渲染器（绘制器）
+        var renderer = PIXI.autoDetectRenderer(256, 256, {
+            transparent: true,
+            antialias: true
+        });
+
+
+
+        //设置渲染器（Canvas）样式充满整个屏幕
+        renderer.view.style.position = "absolute ";
+        renderer.view.style.width = window.innerWidth + "px ";
+        renderer.view.style.height = window.innerHeight + "px ";
+        renderer.view.style.display = "block ";
+        renderer.resize(window.innerWidth, window.innerHeight);
+        //将该renderer.view渲染器添加到页面上
+        document.body.appendChild(renderer.view);
+        // 为了支持Retina设备高像素密度
+        var ratio = (window.devicePixelRatio || 1) > 1 ? 2 : 1;
+
+        //设置标题文字的样式，fontSize字体大小、fontWeight字体粗细、fill字体的颜色（十六进制）、align字体的对齐方式（cneter为文字居中）
+        var baseStyle = {
+            fontSize: 64 * ratio,
+            fontWeight: "bold ",
+            fill: '#8b1a1a',
+            align: 'center'
+        };
+
+        //使用PIXI的Text文字绘制接口，传入需要绘制的文字，与文字样式
+        var titleText = new PIXI.Text("逆 序 击 破 ", baseStyle);
+
+        //anchor.x/y 设置该元素的定位标准（即锚点），初始值是右上角即（0,0）坐标，我们更改为0.5,0.5 即定位标准变成以元素的中心为准
+        titleText.anchor.x = 0.5;
+        titleText.anchor.y = 0.5;
+
+        //设置该元素的xy轴位置
+        titleText.x = renderer.width / 2;
+        titleText.y = renderer.height * (1 - 0.618);
+
+        //将标题元素添加到舞台中
+        stage.addChild(titleText);
+
+        var buttonStyle = {
+
+            fontSize: 30 * ratio,
+            fontWeight: "bold ",
+            align: 'center'
+
+        };
+
+        //绘制 对战模式 按钮
+        var startMulti = new PIXI.Text("对战模式 ", buttonStyle);
+
+        //文字的定位，参数解释同上
+        startMulti.anchor.x = 0.5;
+        startMulti.anchor.y = 0.5;
+        startMulti.x = renderer.width / 2 - 100 * ratio;
+        startMulti.y = renderer.height * (1 - 0.618) + 150 * ratio;
+
+        //添加到舞台
+        stage.addChild(startMulti);
+
+        //绘制 单机模式 按钮
+        var startSingle = new PIXI.Text("单机模式 ", buttonStyle);
+
+        // 参数解释同上
+        startSingle.anchor.y = 0.5;
+        startSingle.x = renderer.width / 2 + 150 * ratio - startSingle.width;
+        startSingle.y = renderer.height * (1 - 0.618) + 150 * ratio;
+
+        //添加到舞台
+        stage.addChild(startSingle);
+
+
+        //分数栏的文字样式
+        var scoreTextStyle = {
+            fontSize: 30 * ratio,
+            fill: '#8b1a1a'
+        };
+
+        //计时状态栏
+        var gameClock = new PIXI.Text("计时开始", {
+            fontSize: 30 * ratio,
+            fill: 0xfb2222,
+            fontWeight: 'bold',
+            align: 'center'
+        });
+
+        gameClock.anchor.x = 0.5;
+        gameClock.x = renderer.width / 2;;
+        gameClock.y = 50 * ratio;
+        stage.addChild(gameClock);
+        gameClock.visible = false;
+
+        //对战状态栏
+        var gamePkStatus = new PIXI.Text("对战中", {
+            fontSize: 30 * ratio,
+            fill: 0x2b8236,
+            fontWeight: "bold",
+            align: "center"
+        });
+
+        gamePkStatus.anchor.x = 0.5;
+        gamePkStatus.x = renderer.width / 2;
+        gamePkStatus.y = renderer.height * 0.25 - 60 * ratio;
+        stage.addChild(gamePkStatus);
+        gamePkStatus.visible = false;
+
+        //分数栏
+        var myScoreText = new PIXI.Text("我 : 0", scoreTextStyle);
+        var hisScoreText = new PIXI.Text("对方 : 0", scoreTextStyle);
+
+        myScoreText.anchor.x = 0.5;
+        myScoreText.x = renderer.width / 4;
+        myScoreText.y = renderer.height * 0.25 - 100 * ratio;
+        myScoreText.visible = false;
+        hisScoreText.anchor.x = 0.5;
+        hisScoreText.x = renderer.width / 4 * 3;
+        // hisScoreText.x = renderer.width / 2 + (squareWidth * 3 + gap) * ratio / 2 - myScoreText.width;
+        hisScoreText.y = renderer.height * 0.25 - 100 * ratio;
+        hisScoreText.visible = false;
+        stage.addChild(myScoreText);
+        stage.addChild(hisScoreText);
+
+        titleText.visible = false;
+        startSingle.visible = false;
+        startMulti.visible = false;
+
+        //加载中
+        var loadingText = new PIXI.Text("加载中...", baseStyle);
+        stage.addChild(loadingText);
+        loadingText.anchor.x = 0.5;
+        loadingText.anchor.y = 0.5;
+        loadingText.x = renderer.width / 2;
+        loadingText.y = renderer.height * (1 - 0.618);
+        loadingText.visible = false;
+
+
+        //匹配进度
+        var initiatingText = new PIXI.Text("连 接 中...", baseStyle);
+        initiatingText.anchor.x = 0.5;
+        initiatingText.anchor.y = 0.5;
+        initiatingText.x = renderer.width / 2;
+        initiatingText.y = renderer.height * (1 - 0.618);
+        initiatingText.visible = false;
+        stage.addChild(initiatingText);
+
+        //取消匹配
+        var cancleMatch = new PIXI.Text("取消", {
+            fontSize: 40 * ratio,
+            fontWeight: "bold",
+            align: 'center'
+
+        });
+
+        cancleMatch.anchor.x = 0.5;
+        cancleMatch.anchor.y = 0.5;
+        cancleMatch.x = renderer.width / 2;
+        cancleMatch.y = renderer.height * (1 - 0.618) + 250 * ratio;
+        cancleMatch.visible = false;
+        stage.addChild(cancleMatch);
+
+
+        //退出游戏
+        var cancleGame = new PIXI.Text("退出游戏", buttonStyle);
+        cancleGame.anchor.x = 0.5;
+        cancleGame.anchor.y = 0.5;
+        cancleGame.x = renderer.width / 2;
+        cancleGame.y = renderer.height * (1 - 0.618) + 350 * ratio;
+        cancleGame.visible = false;
+        stage.addChild(cancleGame);
+
+        //定义颜色数组，九个颜色对应九个数组
+        var colors = [0x292f36, 0x4ecdc6, 0xff6b6b, 0xf1db3b, 0x6e2594, 0x5a352a, 0x7284a8, 0x2c4251, 0xf0c987];
+
+        //定义方格的宽度，间隙
+        var squareWidth = 90;
+        var gap = 20;
+
+        //左上角第一个方格的位置 X/Y
+        var topx = (renderer.width - squareWidth * ratio * 3 - gap) / 2;
+        var topy = renderer.height * 0.25;
+
+
+        //创建一个存放9个方格数据的数组，每个数据都是一个方格对象
+        var backgroundSquares = new Array(9);
+
+        //因为需要画九宫格，选择做一个二维数组循环
+
+        //操作面板，即显示出来让玩家点击的一层
+        for (var i = 0; i < 3; i++) {
+            for (var j = 0; j < 3; j++) {
+
+                //使用PIXI的图行接口Graphics画我们需要的方格
+                square = new PIXI.Graphics();
+
+                //该方格的定位锚点，与文字定位类似
+                square.pivot.x = 0.5;
+                square.pivot.y = 0.5;
+
+                //方格填充的颜色 数值为十六进制
+                square.beginFill(0xbdbdbd);
+
+                //画出矩形，四个参数 （起点X，起点Y，终点X，终点Y）
+                square.drawRoundedRect(0, 0, squareWidth * ratio, squareWidth * ratio);
+
+                //方格的位置 与文字参数相同
+                square.x = i * (squareWidth + gap) * ratio + topx;
+                square.y = j * (squareWidth + gap) * ratio + topy;
+
+                //隐藏元素
+                square.visible = false;
+
+                //添加到舞台
+                stage.addChild(square);
+
+                //将该方格到数组中，以便游戏显示隐藏及更多的操作
+                backgroundSquares[i * 3 + j] = square;
+
+                //绑定点击的事件，并触发hit函数
+                //+++++++++++++++++++++
+
+                //存储该方格的索引值
+                square.nixuIndex = i * 3 + j;
+                square.on("click", hit);
+                square.on("tap", hit);
+
+                //+++++++++++++++++++++
+
+            }
+        }
+
+        //方块的点击事件
+
+        var delayedGameHandler;
+
+        function hit(e) {
+
+            //nextHit 表示正确点击的指针索引 数值递减
+
+            //点击正确，并且不是最后一个
+            if (this.nixuHitcheck_ === nextHit && nextHit != 0) {
+
+                //错误统计重置
+                errorCount = 0;
+
+                //点击正确显示对应的随机方块层
+                foregroundSquares[this.nixuIndex].visible = true;
+
+                //指针减一
+                nextHit = nextHit - 1;
+
+                //点击正确，并且是最好一个方格
+            } else if (this.nixuHitcheck_ === nextHit && nextHit == 0) {
+
+                //显示对应的方格  
+                foregroundSquares[this.nixuIndex].visible = true;
+
+                //更新分数
+                myScore += 1000 + (level - 3) * 500;
+
+                //更新分数函数
+                updateScore();
+
+                //延时1s后隐藏操作面板层的方格，并且重新显示 随机方格，进行下一关卡
+                delayedGameHandler = setTimeout(function() {
+
+                    for (var j = 0; j < backgroundSquares.length; j++) {
+                        foregroundSquares[j].visible = false;
+                        backgroundSquares[j].visible = false;
+                    }
+
+                    play();
+
+                }, 1000);
+
+            } else {
+
+                //点击错误 错误数增加1
+                errorCount += 1;
+
+                //隐藏所有 随机方块层
+                for (var j = 0; j < backgroundSquares.length; j++) {
+                    foregroundSquares[j].visible = false;
+                }
+
+                //指针重置
+                nextHit = seq.length - 1;
+
+                //累计点错三次，则重新下一关卡
+                if (errorCount === 4) {
+                    //隐藏所有方块
+                    for (var j = 0; j < backgroundSquares.length; j++) {
+                        foregroundSquares[j].visible = false;
+                        backgroundSquares[j].visible = false;
+                    }
+
+                    play();
+                }
+
+            }
+        }
+
+        //更新分数模块
+        function updateScore() {
+            myScoreText.text = "我: " + myScore;
+            if (gameType === "m") {
+                mo.sendMessage("01", {
+                    score: myScore
+                });
+            }
+
+            if (myScore > 1000 + (level - 2) * (level - 2) * 3000)
+                level += 1;
+
+        }
+        //随机显示方格的背景层
+
+        //具体参数同上
+        var foregroundSquares = new Array(9);
+
+        for (i = 0; i < 3; i++) {
+            for (j = 0; j < 3; j++) {
+
+                square = new PIXI.Graphics();
+                square.pivot.x = 0.5;
+                square.pivot.y = 0.5;
+                square.beginFill(colors[i * 3 + j]);
+                square.drawRoundedRect(0, 0, squareWidth * ratio, squareWidth * ratio);
+                square.x = i * (squareWidth + gap) * ratio + topx;
+                square.y = j * (squareWidth + gap) * ratio + topy;
+                square.visible = false;
+                stage.addChild(square);
+                foregroundSquares[i * 3 + j] = square;
+
+
+            }
+        }
+
+        //设置PI常数
+        var PI = Math.PI ? Math.PI : 3.14159;
+
+        //标题动画
+        titleText.visible = true;
+
+        var titleScale = {
+            x: 0.2
+        };
+        var buttonScale = {
+            x: 0.2
+        };
+        var titleTween = new TWEEN.Tween(titleScale).to({
+            x: 1
+        }, 800).easing(TWEEN.Easing.Back.Out).onUpdate(function() {
+            titleText.scale.x = titleScale.x;
+            titleText.scale.y = titleScale.x;
+            titleText.rotation = titleScale.x * PI * 2;
+        }).onComplete(function() {
+            startSingle.visible = true;
+            startMulti.visible = true;
+        });
+
+
+        //单机、对战模式动画
+        titleText.scale = {
+            x: 0.2,
+            y: 0.2
+        };
+        titleText.skew = {
+            x: -0.2,
+            y: -0.15
+        };
+        var buttonTween = new TWEEN.Tween(buttonScale).to({
+            x: 1
+        }, 60).onUpdate(function() {
+            startSingle.scale.x = buttonScale.x;
+            startSingle.scale.y = buttonScale.x;
+            startMulti.scale.x = buttonScale.x;
+            startMulti.scale.y = buttonScale.x;
+        }).onComplete(function() {
+            startSingle.interactive = true;
+            startMulti.interactive = true;
+        });
+
+        titleTween.chain(buttonTween);
+
+        titleTween.start();
+
+        renderer.render(stage);
+
+        //点击事件，PC端用click事件，移动端使用touch事件
+        startSingle.on("click", function(e) {
+            playSingle();
+        });
+        startSingle.on("touchend", function(e) {
+            playSingle();
+        });
+
+        function playSingle() {
+            gameType = "s";
+            myScoreText.text = "得分: 0";
+            myScoreText.x = renderer.width / 2;
+            cancleGame.visible = true;
+            cancleGame.interactive = true;
+            myScoreText.visible = true;
+            hisScoreText.visible = false;
+            initiatingText.visible = false;
+            titleText.visible = false;
+            startSingle.visible = false;
+            startMulti.visible = false;
+            play();
+        }
+
+
+
+        //生成随机整数
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min)) + min;
+        };
+
+        //检查数字n是否包含在数组seq中, size为已生成的随机数个数
+        function checkInSequence(seq, n, size) {
+            for (var i = 0; i < size; i++) {
+                if (seq[i] === n)
+                    return true;
+            }
+            return false;
+        }
+
+        //随机生成点击的序列，根据传入n参数数字大小
+
+        function generateSequence(n) {
+            var sequence = new Array(n);
+            var next = 0;
+            var r;
+            var generated;
+            for (var i = 0; i < n; i++) {
+                generated = false;
+                while (!generated) {
+                    r = getRandomInt(0, 9);
+                    if (!checkInSequence(sequence, r, i)) {
+                        generated = true;
+                        sequence[i] = r;
+                    }
+                }
+            }
+            return sequence;
+        }
+
+        //禁止方格的事件响应
+        function disableAll() {
+            var len = backgroundSquares.length;
+            for (var i = 0; i < len; i++) {
+                backgroundSquares[i].interactive = false;
+                foregroundSquares[i].interactive = false;
+            }
+        }
+
+        //难度等级（即随机显示方格的数量），根据游戏分数会递增
+        var level = 3;
+
+        //用来存储随机生成的序列
+        var seq;
+
+        //我的分数
+        var myScore = 0;
+
+        //正确点击位置的索引
+        var nextHit = -1;
+
+        //统计错误的次数
+        var errorCount = 0;
+
+        function play() {
+
+            //初始化错误的次数
+            errorCount = 0;
+
+            //禁止方格的响应事件
+            disableAll();
+
+            //通过函数获取到随机显示方格的位置信息
+            seq = generateSequence(level);
+
+            //临时存储方格数的数组
+            var hitTweenScales = new Array(level);
+            var hitTweens = new Array(level);
+
+            //循环level次
+            for (i = 0; i < level; i++) {
+
+                hitTweenScales[i] = {
+                    x: 0,
+                    y: 0,
+                    target: foregroundSquares[seq[i]]
+                };
+                //显示 随机生成序列中的方格
+                foregroundSquares[seq[i]].visible = true;
+                //初始化该方格的缩放
+                foregroundSquares[seq[i]].scale.x = 0;
+                foregroundSquares[seq[i]].scale.y = 0;
+
+                //给随机生成序列对应的方格（随机显示层）设置动画
+                hitTweens[i] = new TWEEN.Tween(hitTweenScales[i]).
+                to({
+                    x: 1,
+                    y: 1
+                }, 350).delay(i * 300).onUpdate(function() {
+                    this.target.scale.x = this.x;
+                    this.target.scale.y = this.y;
+                }).start();
+            }
+
+            //定义最后一个方格动画完成时，进行的操作
+            hitTweens[i - 1].onComplete(
+                function() {
+                    setTimeout(function() {
+                        //在退出游戏时不显示，避免动画未完成就退出游戏后显示背景层
+                        if (!cancleGame.visible) return;
+
+                        //允许操作面板层的事件交互，并隐藏随机显示的方格
+                        for (var j = 0; j < foregroundSquares.length; j++) {
+                            backgroundSquares[j].interactive = true;
+                            foregroundSquares[j].visible = false;
+                        }
+
+                        //初始化，删除操作面板层的对应随机数,显示操作面板层各个方格
+                        for (j = 0; j < backgroundSquares.length; j++) {
+                            delete backgroundSquares[j].nixuHitcheck_;
+                            backgroundSquares[j].visible = true;
+                        }
+
+                        //随机序列存储到对应的（操作面板层）上的方格
+                        for (j = 0; j < seq.length; j++) {
+                            backgroundSquares[seq[j]].nixuHitcheck_ = j;
+                        }
+                        nextHit = level - 1;
+
+                    }, 200);
+                });
+        }
+        //为退出游戏 绑定 点击事件
+        cancleGame.on("touchend", function() {
+            cancleGameHandler();
+        });
+        cancleGame.on("click", function() {
+            cancleGameHandler();
+        });
+
+        function cancleGameHandler() {
+
+            //隐藏该按钮，并且禁止事件响应
+            cancleGame.visible = false;
+            cancleGame.interactive = false;
+            if (gameType == "m") {
+                mo.sendMessage("08", {
+                    score: myScore
+                });
+            }
+            exitGame();
+        }
+
+        //退出游戏 初始化样式
+        function exitGame() {
+            clockHandler = false;
+            clearTimeout(delayedGameHandler);
+            hiddenAll();
+            initiatingText.visible = false;
+            myScoreText.visible = false;
+            hisScoreText.visible = false;
+            myScoreText.text = "我: 0";
+            hisScoreText.text = "对方: 0";
+            titleText.visible = true;
+            startMulti.visible = true;
+            startSingle.visible = true;
+            mo.disconnect();
+            hisScore = 0;
+            myScore = 0;
+            level = 3;
+            errorCount = 0;
+            nextHit = -1;
+            gameClockTime = 60;
+            gamePkStatus.visible = false;
+            gameClock.visible = false;
+            gamePkStatus.text = "对战中";
+        }
+
+
+        function hiddenAll() {
+            var len = backgroundSquares.length;
+            for (var i = 0; i < len; i++) {
+                backgroundSquares[i].visible = false;
+                foregroundSquares[i].visible = false;
+            }
+        }
+
+        //随机生成的玩家ID
+        var playerID = uuid.v4();
+
+        //匹配请求ID
+        var requestID;
+
+        // 测试配置，具体参数解释可以查看API文档
+
+        //游戏ID
+        var gameID = "d6b8371d-f3a2-49a7-a0a7-76878e6cb1c8";
+
+        //密钥ID
+        var secrete = "64e812ee62207bb1c30923a75019e72f39e001a9";
+
+        //超时时间
+        var timeout = 5;
+
+        //匹配算法参数
+        var algo = "0";
+        var initiated = false;
+
+        var delayedMatchHandler, clockHandler = false,
+            clockStartTime;
+
+        //匹配ID
+        var matchID = undefined;
+
+        //汇总匹配请求配置信息
+        var options = {
+            gameID: gameID,
+            secrete: secrete,
+            timeout: timeout
+        };
+
+        //加入对手的分数
+        var hisScore = 0;
+
+        //比赛计时器，这里设置为60s
+        var gameClockTime = 60;
+
+        //实例化api提供的MatchOn，后面的所有服务调用直接使用mo对象
+        var mo = new MatchOn(options);
+
+
+        //对战模式 绑定点击事件
+        startMulti.on("touchend", function() {
+            startMultiHandler();
+        });
+        startMulti.on("click", function() {
+            startMultiHandler();
+        });
+
+        //点击后的处理事件
+        function startMultiHandler() {
+
+            //清除延时
+            clearTimeout(delayedMatchHandler);
+            clearTimeout(delayedGameHandler);
+
+            //隐藏初始化标题，文字
+            titleText.visible = false;
+            startMulti.visible = false;
+            startSingle.visible = false;
+
+            //显示匹配进度
+            initiatingText.visible = true;
+
+            //显示退出游戏，允许响应事件
+            cancleMatch.visible = true;
+            cancleMatch.interactive = true;
+
+            //调整我的分数栏的定位位置，初始化文字
+            myScoreText.x = renderer.width / 4;
+            myScoreText.text = "我: 0";
+
+            //initiated标记是否初始化成功，是，则直接发送匹配请求，反之，需要mo.init获取服务器地址薄（详情查看API文档）
+            if (initiated)
+                matchPlayer();
+            else
+                initiate();
+        };
+
+        //首次初始化获取服务器地址薄
+        function initiate() {
+            //init成功
+            mo.init();
+        }
+
+        //定义init成功函数，对应mo.init事件
+        mo.on("initSucceeded", function() {
+
+            //初始化成功修改initiated状态为true,下次不需要再次init，直接发送请求
+            initiated = true;
+
+            //更改进度条状态
+            initiatingText.text = " 匹 配 对 手 中... ";
+
+            //返回上面发送请求
+            matchPlayer();
+
+        });
+
+        //直接生成匹配请求，随机请求id，newMatch建立匹配请求
+        function matchPlayer() {
+            requestID = uuid.v4();
+            mo.newMatch({
+                playerID: playerID,
+                requestID: requestID,
+                algo: algo
+            });
+
+        }
+
+        //定义初始化成功函数
+        mo.on("newMatchSucceeded", function(e) {
+            matchID = e.data.matchID;
+
+            //开始对战
+            playMulti();
+
+            //更改游戏状态为m，即对战
+            gameType = "m";
+            cancleMatch.interactive = false;
+            cancleMatch.visible = false;
+        });
+
+        //开始对战
+        function playMulti() {
+            initiatingText.text = "匹配对手中...";
+            myScore = 0;
+            hisScore = 0;
+            mo.openSocket({
+                playerID: playerID,
+                matchID: matchID
+            });
+            cancleGame.visible = true;
+            cancleGame.interactive = true;
+            myScoreText.visible = true;
+            hisScoreText.visible = true;
+            initiatingText.visible = false;
+            gamePkStatus.visible = true;
+            gamePkStatus.text = "对战中";
+            gameClock.text = "开始计时";
+            gameClock.visible = true;
+            play();
+            clockStartTime = new Date().getTime();
+            clockHandler = true;
+        }
+
+
+        //定义mo.newMatch的请求失败，超时函数
+        mo.on("newMatchError", function() {
+
+            console.log("matching failed");
+            matchingFailed(1);
+
+        });
+
+        mo.on("newMatchTimeout", function() {
+
+            console.log("matching timedout");
+            matchingFailed(0);
+
+        });
+
+        //更新错误事件的不同，提醒用户匹配结果，并且更改元素显示隐藏，文字内容
+        function matchingFailed(e) {
+            if (!cancleMatch.visible) return;
+            cancleMatch.visible = false;
+            cancleMatch.interactive = false;
+            if (e) {
+                initiatingText.text = "未找到对手";
+            } else {
+                initiatingText.text = "匹配超时";
+
+            }
+
+            delayedMatchHandler = setTimeout(function() {
+                if (!initiatingText.visible) return;
+                startSingle.visible = true;
+                startMulti.visible = true;
+                initiatingText.visible = false;
+                initiatingText.text = "匹配对手中...";
+                titleText.visible = true;
+            }, 2000);
+        }
+
+        cancleMatch.on("touchend", function() {
+            cancleMatchHandler();
+        });
+
+        cancleMatch.on("click", function() {
+            cancleMatchHandler();
+        });
+
+        function cancleMatchHandler() {
+            cancleMatch.visible = false;
+            cancleMatch.interactive = false;
+            initiatingText.text = "取消匹配中";
+            var req = {
+                cancelID: uuid.v4(),
+                playerID: playerID,
+                originalAlgo: algo,
+                originalRequestID: requestID
+            }
+            mo.cancelMatchingRequest(req);
+        }
+
+        //定义取消成功后的处理函数
+        mo.on("cancelMatchingSucceeded", function() {
+
+            //隐藏进度栏
+            initiatingText.visible = false;
+            initiatingText.text = "匹配对手中...";
+
+            //回到主页面
+            titleText.visible = true;
+            startMulti.visible = true;
+            startSingle.visible = true;
+
+        });
+
+        mo.on("message", function(e) {
+
+            if (e.message.data.type === "01") {
+                hisScore = e.message.data.content.score;
+                hisScoreText.text = "对方: " + hisScore;
+            } else if (e.message.data.type === "08") {
+                gamePkStatus.text = "对方已退出对战";
+            }
+        });
+
+
+        //执行循环执行函数
+        gameLoop();
+
+        //定义一个循环渲染函数，用来更新最新的元素信息
+        function gameLoop() {
+
+            if (clockHandler) {
+
+                //计算剩余时间
+                var timeNumber = gameClockTime - Math.floor((new Date().getTime() - clockStartTime) / 1000);
+
+                //时间到达
+                if (timeNumber < 0) {
+                    clockHandler = false;
+                    if (myScore >= hisScore) {
+                        gamePkStatus.text = "你赢了";
+                    } else {
+                        gamePkStatus.text = "你输了";
+                    }
+                    mo.disconnect();
+                } else {
+
+                    //时间未到，更新计时器显示状态
+                    var timeStr = Math.floor(timeNumber / 60) < 10 ? "0" + Math.floor(timeNumber / 60) : Math.floor(timeNumber / 60);
+                    timeStr += ":";
+                    timeStr += (timeNumber % 60) < 10 ? ("0" + timeNumber % 60) : timeNumber % 60;
+                    gameClock.text = timeStr;
+
+                }
+            }
+
+
+            window.requestAnimationFrame(gameLoop);
+
+            TWEEN.update();
+
+            renderer.render(stage);
+
+        }
+    }());
+    </script>
+</body>
+
+</html>

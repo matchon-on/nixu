@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="cn">
+
+<head>
+    <meta charset="utf-8">
+    <title>逆序击破</title>
+    <meta name="format-detection" content="telephone=no">
+    <style>
+    * {
+        padding: 0;
+        margin: 0
+    }
+    </style>
+</head>
+
+<body>
+    <script src="https://matchon.cn/libs/MoEventEmitter.js">
+    请打开浏览器的JavaScript功能
+    </script>
+    <script src="https://matchon.cn/libs/matchon-core.js"></script>
+    <script src="lib/Tween.min.js"></script>
+    <script src="lib/pixi.js"></script>
+    <script src="lib/uuid.js"></script>
+    <script>
+    /* 使用立即执行的匿名函数 */
+
+    (function nixu() {
+
+        //使用PIXI提供的函数Container()创建一个舞台（即画布），接下来所有需要绘制的元素都将会添加到该舞台上
+        var stage = new PIXI.Container();
+
+        //PIXI.autoDetectRenderer()是PIXI提供的自动检测适合浏览器呈现画布的渲染器（绘制器）
+        var renderer = PIXI.autoDetectRenderer(256, 256, {
+            transparent: true,
+            antialias: true
+        });
+
+
+
+        //设置渲染器（Canvas）样式充满整个屏幕
+        renderer.view.style.position = "absolute ";
+        renderer.view.style.width = window.innerWidth + "px ";
+        renderer.view.style.height = window.innerHeight + "px ";
+        renderer.view.style.display = "block ";
+        renderer.resize(window.innerWidth, window.innerHeight);
+        //将该renderer.view渲染器添加到页面上
+        document.body.appendChild(renderer.view);
+        // 为了支持Retina设备高像素密度
+        var ratio = (window.devicePixelRatio || 1) > 1 ? 2 : 1;
+
+        //设置标题文字的样式，fontSize字体大小、fontWeight字体粗细、fill字体的颜色（十六进制）、align字体的对齐方式（cneter为文字居中）
+        var baseStyle = {
+            fontSize: 64 * ratio,
+            fontWeight: "bold ",
+            fill: '#8b1a1a',
+            align: 'center'
+        };
+
+        //使用PIXI的Text文字绘制接口，传入需要绘制的文字，与文字样式
+        var titleText = new PIXI.Text("逆 序 击 破 ", baseStyle);
+
+        //anchor.x/y 设置该元素的定位标准（即锚点），初始值是右上角即（0,0）坐标，我们更改为0.5,0.5 即定位标准变成以元素的中心为准
+        titleText.anchor.x = 0.5;
+        titleText.anchor.y = 0.5;
+
+        //设置该元素的xy轴位置
+        titleText.x = renderer.width / 2;
+        titleText.y = renderer.height * (1 - 0.618);
+
+        //将标题元素添加到舞台中
+        stage.addChild(titleText);
+
+        var buttonStyle = {
+
+            fontSize: 30 * ratio,
+            fontWeight: "bold ",
+            align: 'center'
+
+        };
+
+        //绘制 对战模式 按钮
+        var startMulti = new PIXI.Text("对战模式 ", buttonStyle);
+
+        //文字的定位，参数解释同上
+        startMulti.anchor.x = 0.5;
+        startMulti.anchor.y = 0.5;
+        startMulti.x = renderer.width / 2 - 100 * ratio;
+        startMulti.y = renderer.height * (1 - 0.618) + 150 * ratio;
+
+        //添加到舞台
+        stage.addChild(startMulti);
+
+        //绘制 单机模式 按钮
+        var startSingle = new PIXI.Text("单机模式 ", buttonStyle);
+
+        // 参数解释同上
+        startSingle.anchor.y = 0.5;
+        startSingle.x = renderer.width / 2 + 150 * ratio - startSingle.width;
+        startSingle.y = renderer.height * (1 - 0.618) + 150 * ratio;
+
+        //添加到舞台
+        stage.addChild(startSingle);
+
+
+        //分数栏的文字样式
+        var scoreTextStyle = {
+            fontSize: 30 * ratio,
+            fill: '#8b1a1a'
+        };
+
+        //计时状态栏
+        var gameClock = new PIXI.Text("计时开始", {
+            fontSize: 30 * ratio,
+            fill: 0xfb2222,
+            fontWeight: 'bold',
+            align: 'center'
+        });
+
+        gameClock.anchor.x = 0.5;
+        gameClock.x = renderer.width / 2;;
+        gameClock.y = 50 * ratio;
+        stage.addChild(gameClock);
+        gameClock.visible = false;
+
+        //对战状态栏
+        var gamePkStatus = new PIXI.Text("对战中", {
+            fontSize: 30 * ratio,
+            fill: 0x2b8236,
+            fontWeight: "bold",
+            align: "center"
+        });
+
+        gamePkStatus.anchor.x = 0.5;
+        gamePkStatus.x = renderer.width / 2;
+        gamePkStatus.y = renderer.height * 0.25 - 60 * ratio;
+        stage.addChild(gamePkStatus);
+        gamePkStatus.visible = false;
+
+        //分数栏
+        var myScoreText = new PIXI.Text("我 : 0", scoreTextStyle);
+        var hisScoreText = new PIXI.Text("对方 : 0", scoreTextStyle);
+
+        myScoreText.anchor.x = 0.5;
+        myScoreText.x = renderer.width / 4;
+        myScoreText.y = renderer.height * 0.25 - 100 * ratio;
+        myScoreText.visible = false;
+        hisScoreText.anchor.x = 0.5;
+        hisScoreText.x = renderer.width / 4 * 3;
+        // hisScoreText.x = renderer.width / 2 + (squareWidth * 3 + gap) * ratio / 2 - myScoreText.width;
+        hisScoreText.y = renderer.height * 0.25 - 100 * ratio;
+        hisScoreText.visible = false;
+        stage.addChild(myScoreText);
+        stage.addChild(hisScoreText);
+
+        titleText.visible = false;
+        startSingle.visible = false;
+        startMulti.visible = false;
+
+        //加载中
+        var loadingText = new PIXI.Text("加载中...", baseStyle);
+        stage.addChild(loadingText);
+        loadingText.anchor.x = 0.5;
+        loadingText.anchor.y = 0.5;
+        loadingText.x = renderer.width / 2;
+        loadingText.y = renderer.height * (1 - 0.618);
+        loadingText.visible = false;
+
+
+        //匹配进度
+        var initiatingText = new PIXI.Text("连 接 中...", baseStyle);
+        initiatingText.anchor.x = 0.5;
+        initiatingText.anchor.y = 0.5;
+        initiatingText.x = renderer.width / 2;
+        initiatingText.y = renderer.height * (1 - 0.618);
+        initiatingText.visible = false;
+        stage.addChild(initiatingText);
+
+        //取消匹配
+        var cancleMatch = new PIXI.Text("取消", {
+            fontSize: 40 * ratio,
+            fontWeight: "bold",
+            align: 'center'
+
+        });
+
+        cancleMatch.anchor.x = 0.5;
+        cancleMatch.anchor.y = 0.5;
+        cancleMatch.x = renderer.width / 2;
+        cancleMatch.y = renderer.height * (1 - 0.618) + 250 * ratio;
+        cancleMatch.visible = false;
+        stage.addChild(cancleMatch);
+
+
+        //退出游戏
+        var cancleGame = new PIXI.Text("退出游戏", buttonStyle);
+        cancleGame.anchor.x = 0.5;
+        cancleGame.anchor.y = 0.5;
+        cancleGame.x = renderer.width / 2;
+        cancleGame.y = renderer.height * (1 - 0.618) + 350 * ratio;
+        cancleGame.visible = false;
+        stage.addChild(cancleGame);
+
+        //定义颜色数组，九个颜色对应九个数组
+        var colors = [0x292f36, 0x4ecdc6, 0xff6b6b, 0xf1db3b, 0x6e2594, 0x5a352a, 0x7284a8, 0x2c4251, 0xf0c987];
+
+        //定义方格的宽度，间隙
+        var squareWidth = 90;
+        var gap = 20;
+
+        //左上角第一个方格的位置 X/Y
+        var topx = (renderer.width - squareWidth * ratio * 3 - gap) / 2;
+        var topy = renderer.height * 0.25;
+
+
+        //创建一个存放9个方格数据的数组，每个数据都是一个方格对象
+        var backgroundSquares = new Array(9);
+
+        //因为需要画九宫格，选择做一个二维数组循环
+
+        //操作面板，即显示出来让玩家点击的一层
+        for (var i = 0; i < 3; i++) {
+            for (var j = 0; j < 3; j++) {
+
+                //使用PIXI的图行接口Graphics画我们需要的方格
+                square = new PIXI.Graphics();
+
+                //该方格的定位锚点，与文字定位类似
+                square.pivot.x = 0.5;
+                square.pivot.y = 0.5;
+
+                //方格填充的颜色 数值为十六进制
+                square.beginFill(0xbdbdbd);
+
+                //画出矩形，四个参数 （起点X，起点Y，终点X，终点Y）
+                square.drawRoundedRect(0, 0, squareWidth * ratio, squareWidth * ratio);
+
+                //方格的位置 与文字参数相同
+                square.x = i * (squareWidth + gap) * ratio + topx;
+                square.y = j * (squareWidth + gap) * ratio + topy;
+
+                //隐藏元素
+                square.visible = false;
+
+                //添加到舞台
+                stage.addChild(square);
+
+                //将该方格到数组中，以便游戏显示隐藏及更多的操作
+                backgroundSquares[i * 3 + j] = square;
+
+            }
+        }
+
+        //随机显示方格的背景层
+
+        //具体参数同上
+        var foregroundSquares = new Array(9);
+
+        for (i = 0; i < 3; i++) {
+            for (j = 0; j < 3; j++) {
+
+                square = new PIXI.Graphics();
+                square.pivot.x = 0.5;
+                square.pivot.y = 0.5;
+                square.beginFill(colors[i * 3 + j]);
+                square.drawRoundedRect(0, 0, squareWidth * ratio, squareWidth * ratio);
+                square.x = i * (squareWidth + gap) * ratio + topx;
+                square.y = j * (squareWidth + gap) * ratio + topy;
+                square.visible = false;
+                stage.addChild(square);
+                foregroundSquares[i * 3 + j] = square;
+
+
+            }
+        }
+
+        //设置PI常数
+        var PI = Math.PI ? Math.PI : 3.14159;
+
+        //标题动画
+        titleText.visible = true;
+
+        var titleScale = {
+            x: 0.2
+        };
+        var buttonScale = {
+            x: 0.2
+        };
+        var titleTween = new TWEEN.Tween(titleScale).to({
+            x: 1
+        }, 800).easing(TWEEN.Easing.Back.Out).onUpdate(function() {
+            titleText.scale.x = titleScale.x;
+            titleText.scale.y = titleScale.x;
+            titleText.rotation = titleScale.x * PI * 2;
+        }).onComplete(function() {
+            startSingle.visible = true;
+            startMulti.visible = true;
+        });
+
+
+        //单机、对战模式动画
+        titleText.scale = {
+            x: 0.2,
+            y: 0.2
+        };
+        titleText.skew = {
+            x: -0.2,
+            y: -0.15
+        };
+        var buttonTween = new TWEEN.Tween(buttonScale).to({
+            x: 1
+        }, 60).onUpdate(function() {
+            startSingle.scale.x = buttonScale.x;
+            startSingle.scale.y = buttonScale.x;
+            startMulti.scale.x = buttonScale.x;
+            startMulti.scale.y = buttonScale.x;
+        }).onComplete(function() {
+            startSingle.interactive = true;
+            startMulti.interactive = true;
+        });
+
+        titleTween.chain(buttonTween);
+
+        titleTween.start();
+
+        renderer.render(stage);
+
+        //点击事件，PC端用click事件，移动端使用touch事件
+        startSingle.on("click", function(e) {
+            playSingle();
+        });
+        startSingle.on("touchend", function(e) {
+            playSingle();
+        });
+
+        function playSingle() {
+            gameType = "s";
+            myScoreText.text = "得分: 0";
+            myScoreText.x = renderer.width / 2;
+            cancleGame.visible = true;
+            cancleGame.interactive = true;
+            myScoreText.visible = true;
+            hisScoreText.visible = false;
+            initiatingText.visible = false;
+            titleText.visible = false;
+            startSingle.visible = false;
+            startMulti.visible = false;
+            play();
+        }
+
+
+
+        //生成随机整数
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min)) + min;
+        };
+
+        //检查数字n是否包含在数组seq中, size为已生成的随机数个数
+        function checkInSequence(seq, n, size) {
+            for (var i = 0; i < size; i++) {
+                if (seq[i] === n)
+                    return true;
+            }
+            return false;
+        }
+
+        //随机生成点击的序列，根据传入n参数数字大小
+
+        function generateSequence(n) {
+            var sequence = new Array(n);
+            var next = 0;
+            var r;
+            var generated;
+            for (var i = 0; i < n; i++) {
+                generated = false;
+                while (!generated) {
+                    r = getRandomInt(0, 9);
+                    if (!checkInSequence(sequence, r, i)) {
+                        generated = true;
+                        sequence[i] = r;
+                    }
+                }
+            }
+            return sequence;
+        }
+
+        //禁止方格的事件响应
+        function disableAll() {
+            var len = backgroundSquares.length;
+            for (var i = 0; i < len; i++) {
+                backgroundSquares[i].interactive = false;
+                foregroundSquares[i].interactive = false;
+            }
+        }
+
+        //难度等级（即随机显示方格的数量），根据游戏分数会递增
+        var level = 3;
+
+        //用来存储随机生成的序列
+        var seq;
+
+        //我的分数
+        var myScore = 0;
+
+        //正确点击位置的索引
+        var nextHit = -1;
+
+        //统计错误的次数
+        var errorCount = 0;
+
+        function play() {
+
+            //初始化错误的次数
+            errorCount = 0;
+
+            //禁止方格的响应事件
+            disableAll();
+
+            //通过函数获取到随机显示方格的位置信息
+            seq = generateSequence(level);
+
+            //临时存储方格数的数组
+            var hitTweenScales = new Array(level);
+            var hitTweens = new Array(level);
+
+            //循环level次
+            for (i = 0; i < level; i++) {
+
+                hitTweenScales[i] = {
+                    x: 0,
+                    y: 0,
+                    target: foregroundSquares[seq[i]]
+                };
+                //显示 随机生成序列中的方格
+                foregroundSquares[seq[i]].visible = true;
+                //初始化该方格的缩放
+                foregroundSquares[seq[i]].scale.x = 0;
+                foregroundSquares[seq[i]].scale.y = 0;
+
+                //给随机生成序列对应的方格（随机显示层）设置动画
+                hitTweens[i] = new TWEEN.Tween(hitTweenScales[i]).
+                to({
+                    x: 1,
+                    y: 1
+                }, 350).delay(i * 300).onUpdate(function() {
+                    this.target.scale.x = this.x;
+                    this.target.scale.y = this.y;
+                }).start();
+            }
+
+            //定义最后一个方格动画完成时，进行的操作
+            hitTweens[i - 1].onComplete(
+                function() {
+                    setTimeout(function() {
+                        //在退出游戏时不显示，避免动画未完成就退出游戏后显示背景层
+                        if (!cancleGame.visible) return;
+
+                        //允许操作面板层的事件交互，并隐藏随机显示的方格
+                        for (var j = 0; j < foregroundSquares.length; j++) {
+                            backgroundSquares[j].interactive = true;
+                            foregroundSquares[j].visible = false;
+                        }
+
+                        //初始化，删除操作面板层的对应随机数,显示操作面板层各个方格
+                        for (j = 0; j < backgroundSquares.length; j++) {
+                            delete backgroundSquares[j].nixuHitcheck_;
+                            backgroundSquares[j].visible = true;
+                        }
+
+                        //随机序列存储到对应的（操作面板层）上的方格
+                        for (j = 0; j < seq.length; j++) {
+                            backgroundSquares[seq[j]].nixuHitcheck_ = j;
+                        }
+                        nextHit = level - 1;
+
+                    }, 200);
+                });
+        }
+        //执行循环执行函数
+        gameLoop();
+
+        //定义一个循环渲染函数，用来更新最新的元素信息
+        function gameLoop() {
+
+            window.requestAnimationFrame(gameLoop);
+
+            TWEEN.update();
+
+            renderer.render(stage);
+
+        }
+    }());
+    </script>
+</body>
+
+</html>

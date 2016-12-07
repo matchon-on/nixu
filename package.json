@@ -1,0 +1,25 @@
+{
+  "name": "h5games",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "webpack-dev-server --progress --host 192.168.0.214",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "description": "H5 demo games for Matchon",
+  "main": "index.js",
+  "author": "Huabi",
+  "license": "MIT",
+  "dependencies": {
+    "MoEventEmitter": "^1.1.1",
+    "babel-core": "^6.18.2",
+    "babel-loader": "^6.2.7",
+    "babel-preset-es2015": "^6.18.0",
+    "babel-preset-react": "^6.16.0",
+    "html-webpack-plugin": "^2.24.1",
+    "node-uuid": "^1.4.7",
+    "pixi.js": "^4.2.2",
+    "uuid": "^2.0.3",
+    "webpack": "^1.13.3",
+    "webpack-dev-server": "^1.16.2"
+  }
+}
