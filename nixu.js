@@ -13,7 +13,7 @@
     var secrete = "44e9f2bbc6e6093f9a7682ee9d1476087d14fc50";
 
 
-    var timeout = 5;
+    var timeout = 40;
     var algo = "0";
     var initiated = false;
     var delayedMatchHandler, delayedGameHandler, clockHandler = false,
